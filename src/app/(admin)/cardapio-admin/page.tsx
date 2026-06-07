@@ -167,8 +167,8 @@ export default function CardapioAdminPage() {
 
             {/* Selos */}
             <div style={{ display: "flex", gap: 4 }}>
-              {p.especial && <Flame size={14} color="var(--yanni-red)" title="Especial do dia" />}
-              {p.sugestaoChef && <ChefHat size={14} color="var(--yanni-gold)" title="Sugestão do chef" />}
+              {p.especial && <Flame size={14} color="var(--yanni-red)" />}
+              {p.sugestaoChef && <ChefHat size={14} color="var(--yanni-gold)" />}
             </div>
 
             {/* Toggle disponível + editar */}
