@@ -1,0 +1,161 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=DM+Sans:wght@300;400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --yanni-red: #C8102E;
+  --yanni-red-dark: #9A0B22;
+  --yanni-black: #080808;
+  --yanni-surface: #111111;
+  --yanni-surface-2: #1A1A1A;
+  --yanni-border: rgba(255,255,255,0.07);
+  --yanni-text: #F0EDE8;
+  --yanni-muted: rgba(240,237,232,0.45);
+  --yanni-gold: #C9A84C;
+  --font-display: 'Noto Serif JP', serif;
+  --font-body: 'DM Sans', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background: var(--yanni-black);
+  color: var(--yanni-text);
+  font-family: var(--font-body);
+  font-weight: 300;
+  overflow-x: hidden;
+}
+
+/* ── Tipografia ─────────────────────────────────────────────── */
+.font-display { font-family: var(--font-display); }
+
+/* ── Scrollbar ──────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--yanni-red); border-radius: 2px; }
+
+/* ── Seleção ────────────────────────────────────────────────── */
+::selection { background: var(--yanni-red); color: #fff; }
+
+/* ── Animações globais ──────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes lineGrow {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(200,16,46,0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(200,16,46,0); }
+}
+
+.animate-fade-up   { animation: fadeUp  0.7s ease forwards; }
+.animate-fade-in   { animation: fadeIn  0.5s ease forwards; }
+.animate-line-grow { animation: lineGrow 0.6s ease forwards; transform-origin: left; }
+
+/* ── Utilitários ────────────────────────────────────────────── */
+.text-muted   { color: var(--yanni-muted); }
+.text-red     { color: var(--yanni-red); }
+.text-gold    { color: var(--yanni-gold); }
+.bg-surface   { background: var(--yanni-surface); }
+.bg-surface-2 { background: var(--yanni-surface-2); }
+.border-subtle { border-color: var(--yanni-border); }
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--yanni-red);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: 14px 32px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+.btn-primary:hover {
+  background: var(--yanni-red-dark);
+  transform: translateY(-1px);
+}
+.btn-primary:active { transform: translateY(0); }
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  color: var(--yanni-text);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: .06em;
+  padding: 13px 28px;
+  border: 1px solid var(--yanni-border);
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.btn-ghost:hover {
+  border-color: rgba(255,255,255,0.25);
+  color: #fff;
+}
+
+/* ── Cards de produto ───────────────────────────────────────── */
+.produto-card {
+  background: var(--yanni-surface);
+  border: 1px solid var(--yanni-border);
+  transition: border-color 0.25s, transform 0.25s;
+  cursor: pointer;
+}
+.produto-card:hover {
+  border-color: rgba(200,16,46,0.3);
+  transform: translateY(-3px);
+}
+
+/* ── Badge especial ─────────────────────────────────────────── */
+.badge-especial {
+  background: var(--yanni-red);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+}
+.badge-chef {
+  background: transparent;
+  color: var(--yanni-gold);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border: 1px solid var(--yanni-gold);
+}
+
+/* ── Linha divisória com acento ─────────────────────────────── */
+.divider-red {
+  height: 1px;
+  background: linear-gradient(to right, var(--yanni-red), transparent);
+}
+
+/* ── Toggle disponível (admin) ──────────────────────────────── */
+.toggle-disponivel {
+  animation: pulse-red 2s infinite;
+}

@@ -1,0 +1,360 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── MULTI-TENANT ────────────────────────────────────────────────────────────
+model Unidade {
+  id        String   @id @default(cuid())
+  nome      String
+  slug      String   @unique
+  telefone  String?
+  endereco  String?
+  ativo     Boolean  @default(true)
+  criadoEm  DateTime @default(now())
+
+  usuarios   Usuario[]
+  produtos   Produto[]
+  pedidos    Pedido[]
+  cupons     Cupom[]
+  caixas     Caixa[]
+  configuracao ConfiguracaoUnidade?
+
+  @@map("unidades")
+}
+
+model ConfiguracaoUnidade {
+  id                String  @id @default(cuid())
+  unidadeId         String  @unique
+  nomeExibicao      String
+  logoUrl           String?
+  videoHeroUrl      String?
+  corPrimaria       String  @default("#C8102E")
+  mensagemChef      String?
+  taxaEntrega       Decimal @default(0) @db.Decimal(10, 2)
+  pedidoMinimo      Decimal @default(0) @db.Decimal(10, 2)
+  aceitaPagPresencial Boolean @default(true)
+  programaPontos    Boolean @default(true)
+  pontosPorReal     Int     @default(1)
+  pontosParaDesconto Int    @default(100)
+  descontoPontos    Decimal @default(5) @db.Decimal(10, 2)
+
+  unidade Unidade @relation(fields: [unidadeId], references: [id])
+
+  @@map("configuracoes_unidade")
+}
+
+// ─── USUÁRIOS / AUTH ──────────────────────────────────────────────────────────
+model Usuario {
+  id         String   @id @default(cuid())
+  nome       String
+  email      String
+  senha      String
+  role       Role     @default(OPERADOR)
+  ativo      Boolean  @default(true)
+  unidadeId  String
+  criadoEm  DateTime @default(now())
+
+  unidade    Unidade  @relation(fields: [unidadeId], references: [id])
+  logs       LogAlteracao[]
+
+  @@unique([email, unidadeId])
+  @@map("usuarios")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  OPERADOR
+  CAIXA
+}
+
+// ─── CARDÁPIO ─────────────────────────────────────────────────────────────────
+model Categoria {
+  id          String    @id @default(cuid())
+  nome        String
+  descricao   String?
+  icone       String?
+  ordem       Int       @default(0)
+  ativo       Boolean   @default(true)
+
+  produtos    Produto[]
+
+  @@map("categorias")
+}
+
+model Produto {
+  id              String   @id @default(cuid())
+  unidadeId       String
+  categoriaId     String
+  nome            String
+  descricao       String?
+  imagemUrl       String?
+  preco           Decimal  @db.Decimal(10, 2)
+  precoCusto      Decimal? @db.Decimal(10, 2)
+  disponivel      Boolean  @default(true)
+  destaque        Boolean  @default(false)
+  especial        Boolean  @default(false)
+  especialQtd     Int?
+  especialVendidos Int     @default(0)
+  sugestaoChef    Boolean  @default(false)
+  rotaImpressao   RotaImpressao @default(COZINHA)
+  controlaEstoque Boolean  @default(false)
+  estoqueAtual    Int      @default(0)
+  estoqueMinimo   Int      @default(0)
+  criadoEm       DateTime @default(now())
+  atualizadoEm   DateTime @updatedAt
+
+  unidade    Unidade   @relation(fields: [unidadeId], references: [id])
+  categoria  Categoria @relation(fields: [categoriaId], references: [id])
+  itensPedido ItemPedido[]
+  logs        LogAlteracao[]
+  movimentos  MovimentoEstoque[]
+
+  @@map("produtos")
+}
+
+enum RotaImpressao {
+  COZINHA
+  BAR
+  AMBOS
+}
+
+// ─── PEDIDOS ──────────────────────────────────────────────────────────────────
+model Pedido {
+  id              String       @id @default(cuid())
+  unidadeId       String
+  numero          Int
+  clienteNome     String?
+  clienteTelefone String?
+  clienteEmail    String?
+  tipo            TipoPedido
+  status          StatusPedido @default(AGUARDANDO_PAGAMENTO)
+  enderecoEntrega String?
+  observacoes     String?
+
+  subtotal        Decimal  @db.Decimal(10, 2)
+  taxaEntrega     Decimal  @default(0) @db.Decimal(10, 2)
+  desconto        Decimal  @default(0) @db.Decimal(10, 2)
+  total           Decimal  @db.Decimal(10, 2)
+
+  formaPagamento  FormaPagamento
+  statusPagamento StatusPagamento @default(PENDENTE)
+  pagamentoId     String?
+  pagamentoRef    String?
+
+  pontosUsados    Int      @default(0)
+  pontosGanhos    Int      @default(0)
+  cupomId         String?
+
+  criadoEm       DateTime @default(now())
+  atualizadoEm   DateTime @updatedAt
+  pago_em        DateTime?
+  impresso        Boolean  @default(false)
+
+  unidade  Unidade      @relation(fields: [unidadeId], references: [id])
+  itens    ItemPedido[]
+  cupom    Cupom?       @relation(fields: [cupomId], references: [id])
+  pagamentos PagamentoRegistro[]
+
+  @@unique([unidadeId, numero])
+  @@map("pedidos")
+}
+
+model ItemPedido {
+  id           String  @id @default(cuid())
+  pedidoId     String
+  produtoId    String
+  nome         String
+  preco        Decimal @db.Decimal(10, 2)
+  quantidade   Int
+  observacao   String?
+  rotaImpressao RotaImpressao
+
+  pedido  Pedido  @relation(fields: [pedidoId], references: [id])
+  produto Produto @relation(fields: [produtoId], references: [id])
+
+  @@map("itens_pedido")
+}
+
+enum TipoPedido {
+  DELIVERY
+  RETIRADA
+  MESA
+}
+
+enum StatusPedido {
+  AGUARDANDO_PAGAMENTO
+  PAGO
+  EM_PREPARO
+  PRONTO
+  SAIU_ENTREGA
+  ENTREGUE
+  CANCELADO
+}
+
+enum FormaPagamento {
+  PIX
+  CARTAO_ONLINE
+  DINHEIRO
+  CARTAO_PRESENCIAL
+  PONTOS
+}
+
+enum StatusPagamento {
+  PENDENTE
+  APROVADO
+  RECUSADO
+  REEMBOLSADO
+}
+
+// ─── FINANCEIRO / CAIXA ───────────────────────────────────────────────────────
+model PagamentoRegistro {
+  id          String   @id @default(cuid())
+  pedidoId    String
+  gateway     Gateway
+  gatewayId   String?
+  valor       Decimal  @db.Decimal(10, 2)
+  status      StatusPagamento
+  payload     Json?
+  criadoEm   DateTime @default(now())
+
+  pedido Pedido @relation(fields: [pedidoId], references: [id])
+
+  @@map("pagamentos_registro")
+}
+
+enum Gateway {
+  MERCADO_PAGO
+  INFINITPAY
+  TOM
+  MANUAL
+}
+
+model Caixa {
+  id          String    @id @default(cuid())
+  unidadeId   String
+  dataAbertura DateTime @default(now())
+  dataFechamento DateTime?
+  saldoInicial Decimal  @db.Decimal(10, 2)
+  saldoFinal   Decimal? @db.Decimal(10, 2)
+  totalVendas  Decimal? @db.Decimal(10, 2)
+  totalPix     Decimal? @db.Decimal(10, 2)
+  totalCartao  Decimal? @db.Decimal(10, 2)
+  totalDinheiro Decimal? @db.Decimal(10, 2)
+  observacoes  String?
+  status       StatusCaixa @default(ABERTO)
+
+  unidade Unidade @relation(fields: [unidadeId], references: [id])
+
+  @@map("caixas")
+}
+
+enum StatusCaixa {
+  ABERTO
+  FECHADO
+}
+
+// ─── ESTOQUE ──────────────────────────────────────────────────────────────────
+model MovimentoEstoque {
+  id         String          @id @default(cuid())
+  produtoId  String
+  tipo       TipoMovimento
+  quantidade Int
+  motivo     String?
+  criadoEm  DateTime         @default(now())
+
+  produto Produto @relation(fields: [produtoId], references: [id])
+
+  @@map("movimentos_estoque")
+}
+
+enum TipoMovimento {
+  ENTRADA
+  SAIDA_VENDA
+  SAIDA_AJUSTE
+  INVENTARIO
+}
+
+// ─── FIDELIDADE ───────────────────────────────────────────────────────────────
+model Cliente {
+  id        String   @id @default(cuid())
+  telefone  String   @unique
+  nome      String?
+  email     String?
+  pontos    Int      @default(0)
+  criadoEm DateTime @default(now())
+
+  pontosHistorico PontoHistorico[]
+
+  @@map("clientes")
+}
+
+model PontoHistorico {
+  id        String        @id @default(cuid())
+  clienteId String
+  tipo      TipoPonto
+  pontos    Int
+  pedidoId  String?
+  criadoEm DateTime      @default(now())
+
+  cliente Cliente @relation(fields: [clienteId], references: [id])
+
+  @@map("pontos_historico")
+}
+
+enum TipoPonto {
+  GANHO
+  RESGATADO
+  EXPIRADO
+  AJUSTE
+}
+
+model Cupom {
+  id           String    @id @default(cuid())
+  unidadeId    String
+  codigo       String
+  tipo         TipoCupom
+  valor        Decimal   @db.Decimal(10, 2)
+  pedidoMinimo Decimal   @default(0) @db.Decimal(10, 2)
+  usoUnico     Boolean   @default(true)
+  usado        Boolean   @default(false)
+  ativo        Boolean   @default(true)
+  validoAte    DateTime?
+  criadoEm    DateTime  @default(now())
+
+  unidade Unidade  @relation(fields: [unidadeId], references: [id])
+  pedidos Pedido[]
+
+  @@unique([codigo, unidadeId])
+  @@map("cupons")
+}
+
+enum TipoCupom {
+  PERCENTUAL
+  FIXO
+}
+
+// ─── AUDITORIA ────────────────────────────────────────────────────────────────
+model LogAlteracao {
+  id          String   @id @default(cuid())
+  usuarioId   String?
+  produtoId   String?
+  entidade    String
+  entidadeId  String
+  campo       String
+  valorAntes  String?
+  valorDepois String?
+  ip          String?
+  criadoEm   DateTime @default(now())
+
+  usuario Usuario? @relation(fields: [usuarioId], references: [id])
+  produto Produto? @relation(fields: [produtoId], references: [id])
+
+  @@map("logs_alteracao")
+}
