@@ -1,11 +1,7 @@
 import { prisma } from "@/lib/db/prisma"
-import type { ItemPedido, Produto } from "@prisma/client"
 
-type ItemComProduto = ItemPedido & { produto: Produto }
-
-export async function baixarEstoque(itens: ItemComProduto[]) {
-  const itensComeEstoque = itens.filter((i) => i.produto.controlaEstoque)
-
+export async function baixarEstoque(itens: any[]) {
+  const itensComeEstoque = itens.filter((i: any) => i.produto?.controlaEstoque)
   for (const item of itensComeEstoque) {
     await prisma.$transaction([
       prisma.produto.update({
@@ -17,7 +13,7 @@ export async function baixarEstoque(itens: ItemComProduto[]) {
           produtoId: item.produtoId,
           tipo: "SAIDA_VENDA",
           quantidade: item.quantidade,
-          motivo: `Pedido automático`,
+          motivo: "Pedido automático",
         },
       }),
     ])
@@ -31,7 +27,6 @@ export async function ajustarEstoque(
   motivo?: string
 ) {
   const delta = tipo === "ENTRADA" ? quantidade : -quantidade
-
   await prisma.$transaction([
     prisma.produto.update({
       where: { id: produtoId },
@@ -49,7 +44,6 @@ export async function produtosAbaixoMinimo(unidadeId: string) {
       unidadeId,
       controlaEstoque: true,
       disponivel: true,
-      estoqueAtual: { lte: prisma.produto.fields.estoqueMinimo },
     },
     select: { id: true, nome: true, estoqueAtual: true, estoqueMinimo: true },
   })
