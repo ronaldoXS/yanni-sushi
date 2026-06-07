@@ -47,7 +47,25 @@ export async function POST(req: NextRequest) {
   const body = await req.json()
   const data = ProdutoSchema.parse(body)
 
-  const produto = await prisma.produto.create({ data })
+  const produto = await prisma.produto.create({
+    data: {
+      unidadeId: data.unidadeId,
+      categoriaId: data.categoriaId,
+      nome: data.nome,
+      descricao: data.descricao,
+      imagemUrl: data.imagemUrl,
+      preco: data.preco,
+      precoCusto: data.precoCusto,
+      disponivel: data.disponivel ?? true,
+      destaque: data.destaque ?? false,
+      especial: data.especial ?? false,
+      sugestaoChef: data.sugestaoChef ?? false,
+      rotaImpressao: data.rotaImpressao ?? "COZINHA",
+      controlaEstoque: data.controlaEstoque ?? false,
+      estoqueAtual: data.estoqueAtual ?? 0,
+      estoqueMinimo: data.estoqueMinimo ?? 0,
+    }
+  })
 
   await logarAlteracao({
     usuarioId: (session.user as any)?.id,
