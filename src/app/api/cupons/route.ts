@@ -38,7 +38,12 @@ export async function POST(req: NextRequest) {
   const data = CupomSchema.parse(body)
   const cupom = await prisma.cupom.create({
     data: {
-      ...data,
+      unidadeId: data.unidadeId,
+      codigo: data.codigo,
+      tipo: data.tipo,
+      valor: data.valor,
+      pedidoMinimo: data.pedidoMinimo ?? 0,
+      usoUnico: data.usoUnico ?? true,
       ativo: true,
       validoAte: data.validoAte ? new Date(data.validoAte) : null,
     },
